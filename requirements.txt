@@ -1,1 +1,6 @@
-
+fastapi
+uvicorn
+sqlalchemy
+passlib
+python-jose
+streamlit
