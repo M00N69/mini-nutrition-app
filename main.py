@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
+from pydantic import BaseModel
 
 # --- Configuration de base ---
 SECRET_KEY = "test_secret_key"
@@ -61,26 +62,46 @@ def get_db():
     finally:
         db.close()
 
+# --- Modèles Pydantic ---
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class MealRequest(BaseModel):
+    name: str
+    calories: float
+    proteins: float
+    carbs: float
+    fats: float
+
 # --- Endpoints ---
 @app.post("/register")
-def register(email: str, password: str, db: Session = Depends(get_db)):
-    hashed_password = get_password_hash(password)
-    user = User(email=email, hashed_password=hashed_password)
-    db.add(user)
+def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == request.email).first()
+    if user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+    hashed_password = get_password_hash(request.password)
+    new_user = User(email=request.email, hashed_password=hashed_password)
+    db.add(new_user)
     db.commit()
+    db.refresh(new_user)
     return {"message": "User registered successfully"}
 
 @app.post("/login")
-def login(email: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
-    if not user or not verify_password(password, user.hashed_password):
+def login(request: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user or not verify_password(request.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     token = create_access_token({"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer"}
 
 @app.post("/meals")
-def add_meal(name: str, calories: float, proteins: float, carbs: float, fats: float, db: Session = Depends(get_db)):
-    meal = Meal(name=name, calories=calories, proteins=proteins, carbs=carbs, fats=fats, user_id=1)  # Test user
+def add_meal(request: MealRequest, db: Session = Depends(get_db)):
+    meal = Meal(name=request.name, calories=request.calories, proteins=request.proteins, carbs=request.carbs, fats=request.fats, user_id=1)  # Test user
     db.add(meal)
     db.commit()
     return {"message": "Meal added successfully"}
@@ -88,4 +109,3 @@ def add_meal(name: str, calories: float, proteins: float, carbs: float, fats: fl
 @app.get("/recommendation")
 def get_recommendation():
     return {"meal": "Poulet et riz", "calories": 600, "proteins": 40, "carbs": 50, "fats": 10}
-
