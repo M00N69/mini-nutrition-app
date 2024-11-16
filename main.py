@@ -9,6 +9,17 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 import logging
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Changez "*" par l'URL de Streamlit si nécessaire
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # --- Configuration de base ---
 SECRET_KEY = "test_secret_key"
 ALGORITHM = "HS256"
