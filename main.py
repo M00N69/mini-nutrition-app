@@ -11,6 +11,9 @@ import logging
 
 from fastapi.middleware.cors import CORSMiddleware
 
+# --- Initialisation de FastAPI ---
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Changez "*" par l'URL de Streamlit si nécessaire
@@ -18,7 +21,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # --- Configuration de base ---
 SECRET_KEY = "test_secret_key"
@@ -33,9 +35,6 @@ logger = logging.getLogger(__name__)
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
-# --- Initialisation de FastAPI ---
-app = FastAPI()
 
 # --- Modèles ---
 class User(Base):
@@ -143,3 +142,12 @@ def get_recommendation():
     logger.info("Recommendation requested")
     return {"meal": "Poulet et riz", "calories": 600, "proteins": 40, "carbs": 50, "fats": 10}
 
+@app.get("/users")
+def get_users(db: Session = Depends(get_db)):
+    users = db.query(User).all()
+    return users
+
+@app.get("/meals")
+def get_meals(db: Session = Depends(get_db)):
+    meals = db.query(Meal).all()
+    return meals
