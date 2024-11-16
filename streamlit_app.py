@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-BASE_URL = "https://<render-fastapi-url>"  # URL du backend FastAPI déployé sur Render
+BASE_URL = "https://mini-nutrition-app.onrender.com"  # URL du backend FastAPI déployé sur Render
 
 st.title("Mini-projet Nutrition")
 
